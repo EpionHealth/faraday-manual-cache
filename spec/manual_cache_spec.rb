@@ -11,6 +11,8 @@ RSpec.describe Faraday::ManualCache do
   let(:stubs) do
     Faraday::Adapter::Test::Stubs.new do |stub|
       stub.get('/') { |_| [200, {}, ''] }
+      stub.get('/4xx') { |_| [400, {}, ''] }
+      stub.get('/5xx') { |_| [500, {}, ''] }
       stub.head('/') { |_| [200, {}, ''] }
       stub.post('/') { |_| [200, {}, ''] }
       stub.put('/') { |_| [200, {}, ''] }
@@ -53,6 +55,16 @@ RSpec.describe Faraday::ManualCache do
       expect(store).not_to receive(:fetch)
       expect(store).not_to receive(:write)
       subject.put('/')
+    end
+
+    it 'should not cache on 4xx error' do
+      expect(store).not_to receive(:write)
+      subject.get('/4xx')
+    end
+
+    it 'should not cache on 5xx error' do
+      expect(store).not_to receive(:write)
+      subject.get('/5xx')
     end
   end
 

@@ -15,8 +15,10 @@ module Faraday
   #   :logger        - A logger object to send cache hit/miss/write messages.
 
   class ManualCache < Faraday::Middleware
-    DEFAULT_CONDITIONS = ->(env) { env.method == :get || env.method == :head }
     DEFAULT_CACHE_KEY = ->(env) { env.url }
+    DEFAULT_CONDITIONS = ->(env) do
+      (env.method == :get || env.method == :head) && !error_respose?(env)
+    end
 
     def initialize(app, *args)
       super(app)
@@ -99,5 +101,11 @@ module Faraday
       response.finish(env) unless env.parallel?
       env.response = response
     end
+
+    def self.error_respose?(env)
+      env.response&.status.to_i >= 400
+    end
+
+    private_class_method :error_respose?
   end
 end

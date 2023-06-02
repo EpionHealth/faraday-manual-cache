@@ -53,6 +53,16 @@ module Faraday
       return unless cacheable?(env) && !env.request_headers['x-faraday-manual-cache']
 
       info "Cache WRITE: #{key(env)}"
+
+      env = env.dup
+
+      # Typhoeus parallel manager is not serializable and will cause the cache write
+      # to fail. Since a cached read won't result in a queued request while in
+      # parallel mode, it's not needed and can be safely removed to avoid the error.
+      if env.parallel?
+        env.parallel_manager = nil
+      end
+
       store.write(
         key(env),
         env,
